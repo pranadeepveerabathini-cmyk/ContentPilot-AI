@@ -31,7 +31,6 @@ export default function LoginPage() {
       alert(
         "Account created successfully! Please check your email if confirmation is enabled."
       );
-
       return;
     }
 
@@ -50,6 +49,19 @@ export default function LoginPage() {
     router.push("/");
   }
 
+  async function handleGoogleLogin() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "https://content-pilot-ai-qr6h-fawn.vercel.app",
+      },
+    });
+
+    if (error) {
+      alert(error.message);
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
@@ -61,6 +73,17 @@ export default function LoginPage() {
         <p className="mb-6 text-center text-slate-500">
           Welcome to ContentPilot AI
         </p>
+
+        <button
+          onClick={handleGoogleLogin}
+          className="mb-4 w-full rounded-lg border border-gray-300 bg-white py-3 font-medium hover:bg-gray-100"
+        >
+          Continue with Google
+        </button>
+
+        <div className="my-4 text-center text-gray-500">
+          OR
+        </div>
 
         <input
           type="email"
