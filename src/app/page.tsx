@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 import PlatformChart from "@/components/dashboard/platform-chart";
@@ -11,6 +12,10 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import StatsCard from "@/components/dashboard/stats-card";
 
 export default function HomePage() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
@@ -19,8 +24,22 @@ export default function HomePage() {
   });
 
   useEffect(() => {
-    loadStats();
+    checkUser();
   }, []);
+
+  async function checkUser() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+
+    setLoading(false);
+    loadStats();
+  }
 
   async function loadStats() {
     const { data, error } = await supabase
@@ -33,7 +52,6 @@ export default function HomePage() {
     }
 
     const total = data.length;
-
     const published = data.filter(
       (p) => p.status === "Published"
     ).length;
@@ -42,7 +60,6 @@ export default function HomePage() {
       (p) => p.status === "Scheduled"
     ).length;
 
-    // Temporary engagement value
     const engagement = total * 120;
 
     setStats({
@@ -53,10 +70,17 @@ export default function HomePage() {
     });
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-xl">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
-
         <div>
           <h1 className="text-4xl font-bold">
             Welcome back 👋
@@ -68,7 +92,6 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-4 gap-6">
-
           <StatsCard
             title="Total Posts"
             value={stats.total.toString()}
@@ -92,7 +115,6 @@ export default function HomePage() {
             value={stats.engagement.toString()}
             change="Estimated"
           />
-
         </div>
 
         <div className="grid grid-cols-3 gap-6">
@@ -107,7 +129,6 @@ export default function HomePage() {
           <RecentPosts />
           <UpcomingPosts />
         </div>
-
       </div>
     </DashboardLayout>
   );
