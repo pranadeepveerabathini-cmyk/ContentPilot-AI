@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Sidebar() {
   return (
     <aside className="w-64 h-screen bg-slate-900 text-white flex flex-col">
@@ -6,29 +8,47 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
+        <Link
+          href="/"
+          className="block w-full text-left p-3 rounded-lg hover:bg-slate-800"
+        >
           Dashboard
-        </button>
+        </Link>
 
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
+        <Link
+          href="/ai-content"
+          className="block w-full text-left p-3 rounded-lg hover:bg-slate-800"
+        >
           AI Content
-        </button>
+        </Link>
 
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
+        <Link
+          href="/calendar"
+          className="block w-full text-left p-3 rounded-lg hover:bg-slate-800"
+        >
           Calendar
-        </button>
+        </Link>
 
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
+        <Link
+          href="/analytics"
+          className="block w-full text-left p-3 rounded-lg hover:bg-slate-800"
+        >
           Analytics
-        </button>
+        </Link>
 
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
+        <Link
+          href="/reports"
+          className="block w-full text-left p-3 rounded-lg hover:bg-slate-800"
+        >
           Reports
-        </button>
+        </Link>
 
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
+        <Link
+          href="/settings"
+          className="block w-full text-left p-3 rounded-lg hover:bg-slate-800"
+        >
           Settings
-        </button>
+        </Link>
       </nav>
     </aside>
   );

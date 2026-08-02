@@ -1,7 +1,58 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+import PlatformChart from "@/components/dashboard/platform-chart";
+import AnalyticsChart from "@/components/dashboard/analytics-chart";
+import RecentPosts from "@/components/dashboard/recent-posts";
+import UpcomingPosts from "@/components/dashboard/upcoming-posts";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import StatsCard from "@/components/dashboard/stats-card";
 
 export default function HomePage() {
+  const [stats, setStats] = useState({
+    total: 0,
+    published: 0,
+    scheduled: 0,
+    engagement: 0,
+  });
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  async function loadStats() {
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*");
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const total = data.length;
+
+    const published = data.filter(
+      (p) => p.status === "Published"
+    ).length;
+
+    const scheduled = data.filter(
+      (p) => p.status === "Scheduled"
+    ).length;
+
+    // Temporary engagement value
+    const engagement = total * 120;
+
+    setStats({
+      total,
+      published,
+      scheduled,
+      engagement,
+    });
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -20,28 +71,41 @@ export default function HomePage() {
 
           <StatsCard
             title="Total Posts"
-            value="128"
-            change="+12.5% this month"
+            value={stats.total.toString()}
+            change="Live from Supabase"
           />
 
           <StatsCard
             title="Published"
-            value="96"
-            change="+8.7% this month"
+            value={stats.published.toString()}
+            change="Live from Supabase"
           />
 
           <StatsCard
             title="Scheduled"
-            value="24"
-            change="+15.3% this month"
+            value={stats.scheduled.toString()}
+            change="Live from Supabase"
           />
 
           <StatsCard
             title="Engagement"
-            value="23.8K"
-            change="+18.6% this month"
+            value={stats.engagement.toString()}
+            change="Estimated"
           />
 
+        </div>
+
+        <div className="grid grid-cols-3 gap-6">
+          <div className="col-span-2">
+            <AnalyticsChart />
+          </div>
+
+          <PlatformChart />
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <RecentPosts />
+          <UpcomingPosts />
         </div>
 
       </div>

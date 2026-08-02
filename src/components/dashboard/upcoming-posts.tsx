@@ -9,18 +9,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function RecentPosts() {
+export default function UpcomingPosts() {
   const [posts, setPosts] = useState<any[]>([]);
 
   useEffect(() => {
-    loadRecentPosts();
+    loadUpcomingPosts();
   }, []);
 
-  async function loadRecentPosts() {
+  async function loadUpcomingPosts() {
     const { data, error } = await supabase
       .from("posts")
       .select("*")
-      .order("scheduled_at", { ascending: false })
+      .eq("status", "Scheduled")
+      .order("scheduled_at", { ascending: true })
       .limit(5);
 
     if (error) {
@@ -34,13 +35,13 @@ export default function RecentPosts() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Posts</CardTitle>
+        <CardTitle>Upcoming Posts</CardTitle>
       </CardHeader>
 
       <CardContent>
         {posts.length === 0 ? (
           <p className="text-slate-500">
-            No posts found.
+            No upcoming posts.
           </p>
         ) : (
           <div className="space-y-4">
@@ -59,17 +60,18 @@ export default function RecentPosts() {
                   </p>
                 </div>
 
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    post.status === "Published"
-                      ? "bg-green-100 text-green-700"
-                      : post.status === "Scheduled"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {post.status}
-                </span>
+                <div className="text-right">
+                  <p className="text-sm font-semibold">
+                    {new Date(post.scheduled_at).toLocaleDateString()}
+                  </p>
+
+                  <p className="text-xs text-slate-500">
+                    {new Date(post.scheduled_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
