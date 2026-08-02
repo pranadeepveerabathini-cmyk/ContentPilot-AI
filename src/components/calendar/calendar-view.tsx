@@ -12,7 +12,7 @@ const localizer = momentLocalizer(moment);
 export default function CalendarView() {
   const [events, setEvents] = useState<any[]>([]);
   const [date, setDate] = useState(new Date());
-  const [view, setView] = useState(Views.MONTH);
+  const [view, setView] = useState<View>(Views.MONTH);
 
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [open, setOpen] = useState(false);
