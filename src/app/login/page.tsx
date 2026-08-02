@@ -10,9 +10,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
 
-  async function handleLogin() {
+  async function handleSubmit() {
     setLoading(true);
+
+    if (isSignup) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      setLoading(false);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      alert(
+        "Account created successfully! Please check your email if confirmation is enabled."
+      );
+
+      return;
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -26,8 +47,6 @@ export default function LoginPage() {
       return;
     }
 
-    alert("Login successful!");
-
     router.push("/");
   }
 
@@ -35,9 +54,13 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-100">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
 
-        <h1 className="mb-6 text-center text-3xl font-bold">
-          Login
+        <h1 className="mb-2 text-center text-3xl font-bold">
+          {isSignup ? "Create Account" : "Login"}
         </h1>
+
+        <p className="mb-6 text-center text-slate-500">
+          Welcome to ContentPilot AI
+        </p>
 
         <input
           type="email"
@@ -56,11 +79,24 @@ export default function LoginPage() {
         />
 
         <button
-          onClick={handleLogin}
+          onClick={handleSubmit}
           disabled={loading}
           className="w-full rounded-lg bg-purple-600 py-3 text-white hover:bg-purple-700"
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading
+            ? "Please wait..."
+            : isSignup
+            ? "Create Account"
+            : "Login"}
+        </button>
+
+        <button
+          onClick={() => setIsSignup(!isSignup)}
+          className="mt-4 w-full text-purple-600"
+        >
+          {isSignup
+            ? "Already have an account? Login"
+            : "Don't have an account? Sign Up"}
         </button>
 
       </div>
