@@ -17,9 +17,16 @@ export default function UpcomingPosts() {
   }, []);
 
   async function loadUpcomingPosts() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
     const { data, error } = await supabase
       .from("posts")
       .select("*")
+      .eq("user_id", user.id)
       .eq("status", "Scheduled")
       .order("scheduled_at", { ascending: true })
       .limit(5);
@@ -54,7 +61,6 @@ export default function UpcomingPosts() {
                   <p className="font-medium">
                     {post.title}
                   </p>
-
                   <p className="text-sm text-slate-500">
                     {post.platform}
                   </p>
@@ -64,7 +70,6 @@ export default function UpcomingPosts() {
                   <p className="text-sm font-semibold">
                     {new Date(post.scheduled_at).toLocaleDateString()}
                   </p>
-
                   <p className="text-xs text-slate-500">
                     {new Date(post.scheduled_at).toLocaleTimeString([], {
                       hour: "2-digit",

@@ -16,26 +16,32 @@ export default function StatsCards() {
   }, []);
 
   async function loadStats() {
-    const { data, error } = await supabase.from("posts").select("*");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("user_id", user.id);
 
     if (error) {
       console.error(error);
       return;
     }
 
-    const totalPosts = data.length;
+    const totalPosts = data?.length || 0;
 
-    const scheduled = data.filter(
-      (post) => post.status === "Scheduled"
-    ).length;
+    const scheduled =
+      data?.filter((post) => post.status === "Scheduled").length || 0;
 
-    const published = data.filter(
-      (post) => post.status === "Published"
-    ).length;
+    const published =
+      data?.filter((post) => post.status === "Published").length || 0;
 
-    const platforms = new Set(
-      data.map((post) => post.platform)
-    ).size;
+    const platforms =
+      new Set(data?.map((post) => post.platform)).size || 0;
 
     setStats({
       totalPosts,
@@ -72,7 +78,6 @@ export default function StatsCards() {
           className="rounded-xl bg-white p-6 shadow border"
         >
           <p className="text-gray-500">{card.title}</p>
-
           <h2 className="mt-2 text-4xl font-bold">
             {card.value}
           </h2>

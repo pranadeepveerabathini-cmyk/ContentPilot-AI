@@ -1,5 +1,5 @@
 "use client";
-
+import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Calendar, momentLocalizer, Views, View } from "react-big-calendar";
@@ -27,44 +27,58 @@ export default function CalendarView() {
   }, []);
 
   async function loadPosts() {
-    const { data, error } = await supabase.from("posts").select("*");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("scheduled_at", { ascending: true });
 
     if (error) {
       console.error(error);
       return;
     }
 
-    setEvents(
-      (data || []).map((post) => ({
+    const calendarEvents =
+      data?.map((post) => ({
         id: post.id,
         title: post.title,
         platform: post.platform,
         start: new Date(post.scheduled_at),
         end: new Date(post.scheduled_at),
-      }))
-    );
+      })) || [];
+
+    setEvents(calendarEvents);
   }
 
   async function handleDelete() {
     if (!selectedPost) return;
 
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this post?"
-    );
+    if (!window.confirm("Delete this post?")) return;
 
-    if (!confirmDelete) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
 
     const { error } = await supabase
       .from("posts")
       .delete()
-      .eq("id", selectedPost.id);
+      .eq("id", selectedPost.id)
+      .eq("user_id", user.id);
 
     if (error) {
       alert(error.message);
       return;
     }
 
-    alert("Post deleted successfully!");
+    toast.success("Post deleted successfully!");
 
     setOpen(false);
     setSelectedPost(null);
@@ -75,6 +89,12 @@ export default function CalendarView() {
   async function handleUpdate() {
     if (!selectedPost) return;
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
     const { error } = await supabase
       .from("posts")
       .update({
@@ -82,16 +102,18 @@ export default function CalendarView() {
         platform: editPlatform,
         scheduled_at: `${editDate} ${editTime}:00`,
       })
-      .eq("id", selectedPost.id);
+      .eq("id", selectedPost.id)
+      .eq("user_id", user.id);
 
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
       return;
     }
 
-    alert("Post updated successfully!");
+    toast.success("Post updated successfully!");
 
     setOpen(false);
+
     loadPosts();
   }
 
@@ -103,11 +125,11 @@ export default function CalendarView() {
           events={events}
           date={date}
           view={view}
-          onNavigate={(newDate) => setDate(newDate)}
-          onView={(newView) => setView(newView)}
           startAccessor="start"
           endAccessor="end"
           style={{ height: 700 }}
+          onNavigate={(newDate) => setDate(newDate)}
+          onView={(newView) => setView(newView)}
           onSelectEvent={(event: any) => {
             setSelectedPost(event);
 
@@ -133,22 +155,22 @@ export default function CalendarView() {
 
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
 
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[430px] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl">
 
-            <Dialog.Title className="mb-5 text-2xl font-bold">
+            <Dialog.Title className="text-2xl font-bold mb-5">
               Edit Post
             </Dialog.Title>
 
             <input
-              className="mb-3 w-full rounded-lg border p-3"
+              className="w-full rounded-lg border p-3 mb-3"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
             />
 
             <select
-              className="mb-3 w-full rounded-lg border p-3"
+              className="w-full rounded-lg border p-3 mb-3"
               value={editPlatform}
               onChange={(e) => setEditPlatform(e.target.value)}
             >
@@ -160,14 +182,14 @@ export default function CalendarView() {
 
             <input
               type="date"
-              className="mb-3 w-full rounded-lg border p-3"
+              className="w-full rounded-lg border p-3 mb-3"
               value={editDate}
               onChange={(e) => setEditDate(e.target.value)}
             />
 
             <input
               type="time"
-              className="mb-5 w-full rounded-lg border p-3"
+              className="w-full rounded-lg border p-3 mb-5"
               value={editTime}
               onChange={(e) => setEditTime(e.target.value)}
             />
@@ -178,7 +200,7 @@ export default function CalendarView() {
                 onClick={handleUpdate}
                 className="rounded-lg bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600"
               >
-                Save Changes
+                Save
               </button>
 
               <button

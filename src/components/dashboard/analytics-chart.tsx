@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-
 import {
   LineChart,
   Line,
@@ -21,9 +20,17 @@ export default function AnalyticsChart() {
   }, []);
 
   async function loadChart() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
     const { data: posts, error } = await supabase
       .from("posts")
-      .select("scheduled_at");
+      .select("scheduled_at")
+      .eq("user_id", user.id)
+      .order("scheduled_at", { ascending: true });
 
     if (error) {
       console.error(error);
@@ -33,9 +40,7 @@ export default function AnalyticsChart() {
     const counts: Record<string, number> = {};
 
     posts?.forEach((post) => {
-      const date = new Date(post.scheduled_at);
-
-      const day = date.toLocaleDateString("en-US", {
+      const day = new Date(post.scheduled_at).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       });
@@ -43,9 +48,9 @@ export default function AnalyticsChart() {
       counts[day] = (counts[day] || 0) + 1;
     });
 
-    const chartData = Object.keys(counts).map((day) => ({
+    const chartData = Object.entries(counts).map(([day, posts]) => ({
       day,
-      posts: counts[day],
+      posts,
     }));
 
     setData(chartData);
@@ -54,7 +59,7 @@ export default function AnalyticsChart() {
   return (
     <div className="bg-white rounded-xl border shadow-sm p-6 h-[380px]">
       <h2 className="text-xl font-semibold mb-4">
-        Posts Scheduled
+        📈 Posts Scheduled
       </h2>
 
       {data.length === 0 ? (
@@ -77,6 +82,8 @@ export default function AnalyticsChart() {
               dataKey="posts"
               stroke="#7C3AED"
               strokeWidth={3}
+              dot={false}
+              activeDot={{ r: 6 }}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -1,5 +1,5 @@
 "use client";
-
+import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -8,9 +8,11 @@ export default function ContentForm() {
   const [platform, setPlatform] = useState("LinkedIn");
   const [tone, setTone] = useState("Professional");
   const [prompt, setPrompt] = useState("");
-
   const [result, setResult] = useState("");
+  const [hashtags, setHashtags] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [rewriteLoading, setRewriteLoading] = useState(false);
 
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
@@ -35,11 +37,64 @@ export default function ContentForm() {
       const data = await res.json();
 
       setResult(data.content || "No content generated.");
-    } catch (err) {
+
+try {
+  const hashtagRes = await fetch("/api/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      topic,
+      platform,
+      tone,
+      prompt: `Generate 10 relevant social media hashtags for: ${topic}. Return hashtags only.`,
+    }),
+  });
+
+  const hashtagData = await hashtagRes.json();
+
+  setHashtags(hashtagData.content || "");
+} catch {
+  setHashtags("");
+}
+    } catch (error) {
       setResult("Something went wrong.");
     }
 
     setLoading(false);
+  }
+
+  async function rewriteContent(style: string) {
+    if (!result) {
+      toast.error("Generate content first.");
+      return;
+    }
+
+    setRewriteLoading(true);
+
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          topic,
+          platform,
+          tone,
+          prompt: `Rewrite this content in a ${style} style:\n\n${result}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      setResult(data.content || result);
+    } catch (error) {
+      toast.error("Failed to rewrite content.");
+    }
+
+    setRewriteLoading(false);
   }
 
   async function copyContent() {
@@ -47,17 +102,25 @@ export default function ContentForm() {
 
     await navigator.clipboard.writeText(result);
 
-    alert("Content copied!");
+    toast.success("Content copied!");
   }
-
-  async function saveToCalendar() {
+    async function saveToCalendar() {
     if (!result) {
       alert("Generate content first.");
       return;
     }
 
     if (!scheduleDate || !scheduleTime) {
-      alert("Select date and time.");
+     toast.warning("Please select a date and time.");
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("Please login first.");
       return;
     }
 
@@ -68,23 +131,23 @@ export default function ContentForm() {
         content: result,
         status: "Scheduled",
         scheduled_at: `${scheduleDate} ${scheduleTime}:00`,
+        user_id: user.id,
       },
     ]);
 
     if (error) {
-      alert(error.message);
+      toast.error("Please login first.");
       return;
     }
 
-    alert("AI post saved to calendar!");
+    toast.success("Post scheduled successfully!");
 
     setScheduleDate("");
     setScheduleTime("");
   }
 
   return (
-    <div className="space-y-6">
-
+        <div className="space-y-6">
       <input
         className="w-full rounded-lg border p-3"
         placeholder="Topic"
@@ -122,8 +185,7 @@ export default function ContentForm() {
         onChange={(e) => setPrompt(e.target.value)}
       />
 
-      <div className="flex gap-3">
-
+      <div className="flex flex-wrap gap-3">
         <button
           onClick={generateContent}
           disabled={loading}
@@ -147,15 +209,68 @@ export default function ContentForm() {
         >
           🔄 Regenerate
         </button>
-
       </div>
 
       <div className="rounded-lg border p-4 min-h-[220px] whitespace-pre-wrap">
         {result || "Generated content will appear here..."}
       </div>
+      {hashtags && (
+  <div className="rounded-lg border bg-slate-50 p-4">
+    <h3 className="mb-2 font-semibold">
+      🏷 Suggested Hashtags
+    </h3>
+
+    <div className="whitespace-pre-wrap text-sm">
+      {hashtags}
+    </div>
+  </div>
+)}
+
+      {result && (
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => rewriteContent("Professional")}
+            disabled={rewriteLoading}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-white"
+          >
+            💼 Professional
+          </button>
+
+          <button
+            onClick={() => rewriteContent("Friendly")}
+            disabled={rewriteLoading}
+            className="rounded-lg bg-green-600 px-4 py-2 text-white"
+          >
+            😊 Friendly
+          </button>
+
+          <button
+            onClick={() => rewriteContent("Funny")}
+            disabled={rewriteLoading}
+            className="rounded-lg bg-yellow-500 px-4 py-2 text-white"
+          >
+            😂 Funny
+          </button>
+
+          <button
+            onClick={() => rewriteContent("Shorter")}
+            disabled={rewriteLoading}
+            className="rounded-lg bg-purple-600 px-4 py-2 text-white"
+          >
+            ✂️ Shorter
+          </button>
+
+          <button
+            onClick={() => rewriteContent("Longer")}
+            disabled={rewriteLoading}
+            className="rounded-lg bg-pink-600 px-4 py-2 text-white"
+          >
+            📖 Longer
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
-
         <input
           type="date"
           value={scheduleDate}
@@ -169,7 +284,6 @@ export default function ContentForm() {
           onChange={(e) => setScheduleTime(e.target.value)}
           className="rounded-lg border p-3"
         />
-
       </div>
 
       <button
@@ -183,7 +297,6 @@ export default function ContentForm() {
       <p className="text-sm text-gray-500">
         Characters: {result.length}
       </p>
-
     </div>
   );
 }

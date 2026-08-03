@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 import PlatformChart from "@/components/dashboard/platform-chart";
 import AnalyticsChart from "@/components/dashboard/analytics-chart";
@@ -41,10 +43,19 @@ export default function HomePage() {
     loadStats();
   }
 
-  async function loadStats() {
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*");
+   async function loadStats() {
+    const {
+   data: { user },
+   } = await supabase.auth.getUser();
+
+    alert("loadStats is running");
+  console.log("Current User ID:", user?.id);
+  console.log("Current User Email:", user?.email);
+
+   const { data, error } = await supabase
+  .from("posts")
+  .select("*")
+  .eq("user_id", user?.id);
 
     if (error) {
       console.error(error);

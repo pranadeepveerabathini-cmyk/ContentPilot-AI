@@ -17,12 +17,17 @@ export default function CreatePostModal() {
       return;
     }
 
+
+   const {
+   data: { user },
+  } = await supabase.auth.getUser(); 
+   console.log("Current User:", user);
     const { error } = await supabase.from("posts").insert([
       {
         title,
         platform,
         status: "Scheduled",
-        scheduled_at: `${date} ${time}:00`,
+        scheduled_at: `${date} ${time}:00`,user_id:user?.id,
       },
     ]);
 

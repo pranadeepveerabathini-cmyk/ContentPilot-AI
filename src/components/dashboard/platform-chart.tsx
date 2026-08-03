@@ -27,9 +27,16 @@ export default function PlatformChart() {
   }, []);
 
   async function loadPlatforms() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
     const { data: posts, error } = await supabase
       .from("posts")
-      .select("platform");
+      .select("platform")
+      .eq("user_id", user.id);
 
     if (error) {
       console.error(error);
