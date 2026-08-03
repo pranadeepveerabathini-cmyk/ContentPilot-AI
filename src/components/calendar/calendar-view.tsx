@@ -5,7 +5,9 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Calendar, momentLocalizer, Views, View } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 const localizer = momentLocalizer(moment);
 

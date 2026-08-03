@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { getDashboardStats } from "@/services/posts";
 
 export default function StatsCards() {
   const [stats, setStats] = useState({
@@ -11,45 +11,22 @@ export default function StatsCards() {
     platforms: 0,
   });
 
+  const loadStats = async () => {
+    const dashboardStats = await getDashboardStats();
+
+    if (!dashboardStats) return;
+
+    setStats({
+      totalPosts: dashboardStats.total,
+      scheduled: dashboardStats.scheduled,
+      published: dashboardStats.published,
+      platforms: dashboardStats.platforms,
+    });
+  };
+
   useEffect(() => {
     loadStats();
   }, []);
-
-  async function loadStats() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    const totalPosts = data?.length || 0;
-
-    const scheduled =
-      data?.filter((post) => post.status === "Scheduled").length || 0;
-
-    const published =
-      data?.filter((post) => post.status === "Published").length || 0;
-
-    const platforms =
-      new Set(data?.map((post) => post.platform)).size || 0;
-
-    setStats({
-      totalPosts,
-      scheduled,
-      published,
-      platforms,
-    });
-  }
 
   const cards = [
     {
@@ -75,12 +52,10 @@ export default function StatsCards() {
       {cards.map((card) => (
         <div
           key={card.title}
-          className="rounded-xl bg-white p-6 shadow border"
+          className="rounded-xl border bg-white p-6 shadow"
         >
           <p className="text-gray-500">{card.title}</p>
-          <h2 className="mt-2 text-4xl font-bold">
-            {card.value}
-          </h2>
+          <h2 className="mt-2 text-4xl font-bold">{card.value}</h2>
         </div>
       ))}
     </div>

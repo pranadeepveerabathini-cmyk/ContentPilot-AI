@@ -10,7 +10,9 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 export default function EngagementChart() {
   const [chartData, setChartData] = useState<any[]>([]);

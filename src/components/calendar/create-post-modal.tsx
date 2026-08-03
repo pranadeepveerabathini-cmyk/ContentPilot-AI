@@ -2,7 +2,9 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 export default function CreatePostModal() {
   const [open, setOpen] = useState(false);

@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-
-const supabase = createClient();
-
-import PlatformChart from "@/components/dashboard/platform-chart";
-import AnalyticsChart from "@/components/dashboard/analytics-chart";
-import RecentPosts from "@/components/dashboard/recent-posts";
-import UpcomingPosts from "@/components/dashboard/upcoming-posts";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import StatsCard from "@/components/dashboard/stats-card";
+import AnalyticsChart from "@/components/dashboard/analytics-chart";
+import PlatformChart from "@/components/dashboard/platform-chart";
+import RecentPosts from "@/components/dashboard/recent-posts";
+import UpcomingPosts from "@/components/dashboard/upcoming-posts";
+import { createClient } from "@/lib/supabase/client";
+import { getDashboardStats } from "@/services/posts";
+
+const supabase = createClient();
 
 export default function HomePage() {
   const router = useRouter();
@@ -25,11 +25,20 @@ export default function HomePage() {
     engagement: 0,
   });
 
-  useEffect(() => {
-    checkUser();
-  }, []);
+  const loadStats = async () => {
+    const dashboardStats = await getDashboardStats();
 
-  async function checkUser() {
+    if (!dashboardStats) return;
+
+    setStats({
+      total: dashboardStats.total,
+      published: dashboardStats.published,
+      scheduled: dashboardStats.scheduled,
+      engagement: dashboardStats.total * 120,
+    });
+  };
+
+  const checkUser = async () => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -39,51 +48,17 @@ export default function HomePage() {
       return;
     }
 
+    await loadStats();
     setLoading(false);
-    loadStats();
-  }
+  };
 
-   async function loadStats() {
-    const {
-   data: { user },
-   } = await supabase.auth.getUser();
-
-    alert("loadStats is running");
-  console.log("Current User ID:", user?.id);
-  console.log("Current User Email:", user?.email);
-
-   const { data, error } = await supabase
-  .from("posts")
-  .select("*")
-  .eq("user_id", user?.id);
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    const total = data.length;
-    const published = data.filter(
-      (p) => p.status === "Published"
-    ).length;
-
-    const scheduled = data.filter(
-      (p) => p.status === "Scheduled"
-    ).length;
-
-    const engagement = total * 120;
-
-    setStats({
-      total,
-      published,
-      scheduled,
-      engagement,
-    });
-  }
+  useEffect(() => {
+    checkUser();
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-xl">
+      <div className="flex h-screen items-center justify-center text-xl">
         Loading...
       </div>
     );
@@ -96,8 +71,7 @@ export default function HomePage() {
           <h1 className="text-4xl font-bold">
             Welcome back 👋
           </h1>
-
-          <p className="text-slate-500 mt-2">
+          <p className="mt-2 text-slate-500">
             Here's what's happening with your content today.
           </p>
         </div>
@@ -108,19 +82,16 @@ export default function HomePage() {
             value={stats.total.toString()}
             change="Live from Supabase"
           />
-
           <StatsCard
             title="Published"
             value={stats.published.toString()}
             change="Live from Supabase"
           />
-
           <StatsCard
             title="Scheduled"
             value={stats.scheduled.toString()}
             change="Live from Supabase"
           />
-
           <StatsCard
             title="Engagement"
             value={stats.engagement.toString()}
@@ -132,7 +103,6 @@ export default function HomePage() {
           <div className="col-span-2">
             <AnalyticsChart />
           </div>
-
           <PlatformChart />
         </div>
 
